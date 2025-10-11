@@ -36,7 +36,7 @@ malloc作用与heap，但是对malloc的调用需要增长stack
 # float
 只要发送有效位和所处位置就可以表示float
 
-对于浮点数1.01（two） x 2 ^ -1 
+对于浮点数：1.01（two） x 2 ^ -1 
 | 表头1 | 表头2 |
 |:------|-------|
 |. | binary point二进制小数点 |
