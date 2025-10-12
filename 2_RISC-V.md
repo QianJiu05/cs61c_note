@@ -85,10 +85,8 @@ RISC-V是小端序的，最低有效字节获得最低的字节地址
 | BYTE3 | BYTE2 | BYTE1 | **BYTE0** | 
 | 00000000 | 00000000 | 00000100 | **00000001** | 
 
-## 数据转移指令
-lw：load word
-
-方向：从内存到寄存器
+## 数据转移指令（lw、sw）
+lw：load word，方向：从内存到寄存器
 
 偏移是以字节（byte）为单位的
 
@@ -98,6 +96,94 @@ lw x10,12(x15) # x10获得A[3],12是A偏移3word，3*4=12 bytes。x15是A[0]的�
 
 add x11,x12,x10 # g = h + A[3]
 ```
-sw：store word
+sw：store word，方向：从寄存器到内存
 
-方向：从寄存器到内存
+sw和lw的偏移量可以是任意长度。
+
+riscv支持非内存对齐，但是效率很低，应该尽量写成内存对齐（4的倍数）
+
+lb：load byte，以字节为单位:`lb x10,3(x11)`
+
+符号扩展LBU：为了保留符号，把符号位x复制出来，写到所有bit里面。语法和LB一样
+
+假设x10：xxxx xxxx xxxx xxxx xxxx xxxx [xzzz zzzz]
+
+x10应该把第一个x进行拓展，前面所有bit都置为x
+
+### example
+```
+addi x11,x0,0x3F5
+sw x11,0(x5)
+lb x12,1(x5)
+```
+
+res: 
+
+x5[00 00 03 F5]
+
+x11[00 00 03 F5]
+
+x12[00 00 00 03] : x12加载x5的偏移1 byte数据（即忽略F5），由于有符号拓展，自动补0
+
+---
+addi的操作可以用lw+add来完成，lw把常数写进内存，再读取到reg里，然后add，但是会很慢
+
+addi的立即数范围是不能超过32位的，所以会比较小，要更大的立即数需要用别的方法生成
+
+## 分支预测
+beq：branch if equal，相等时分支
+```
+beq reg1,reg2,L1
+==>
+if((value in reg1) == (value in reg2)){
+    goto L1(lable);
+}else{
+    next;
+}
+```
+bne: branch if not equal
+
+branch语句改变了控制流
+| 指令 | 全称 | 含义 |
+|:------|-------|-------|
+| beq | branch if equal | |
+| bne | branch if not equal | |
+| blt | branch if less than | |
+| bge | branch if greater than/ equal | >= |
+| bltu | 无符号版本blt | 比较，把reg的值视为无符号数 |
+| bgeu | 无符号版本bge | |
+一定跳转：jump(j),`j lable`
+
+比较需要两个寄存器，不能与立即数进行比较
+
+有小于和大于等于，所以没必要有另外两个指令，节省指令数量；但是有bltu用于比较无符号
+### example
+```
+int a[20];
+int sum = 0;
+for(int i=0; i<20; i++){
+    sum += a[i]
+}
+==>assembly
+    add x9,x8,x0 # x9 = &a[0]
+    add x10,x0,x0 # init sum = 0
+    add x11,x0,x0 #init i = 0
+    addi x13,x0,20 #init x13 = 20
+Loop:
+    bge x11,x13,Done #if x11 > x13(loop finish) goto Done
+    lw x12,0(x9) # x12 = a[0]
+    add x10,x10,x12 # sum += x12
+    addi x9,x9,4 # &a[i+1],指针以四字节递增
+    addi x11,x11,1 # i++
+    j Loop
+Done:
+```
+## 逻辑指令
+| 逻辑 | 指令 | 逻辑操作 |
+|:------|-------|-------|
+| & | and | 按位和 |
+| | | or | 按位与 |
+| ^ | xor | 按位异或 |
+| << | sll | 左移，shift left logical |
+| >> | srl | 右移， shift right logical |
+
