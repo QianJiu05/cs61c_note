@@ -182,7 +182,7 @@ Done:
 | 逻辑 | 指令 | 逻辑操作 |
 |:------|-------|-------|
 | & | and | 按位和 |
-| | | or | 按位与 |
+| \| | or | 按位与 |
 | ^ | xor | 按位异或 |
 | << | sll | 左移，shift left logical |
 | >> | srl | 右移， shift right logical |
