@@ -45,6 +45,47 @@ jalr rd,rs,imm #jump and link reg，读取返回地址跳转回去
 j,jr,ret是伪指令
 j: jal x0,Lable
 ```
+### jalr 
+
+rd：目标寄存器，用于保存返回地址。如果不需要保存返回地址，可以使用x0（零寄存器）。
+
+rs：源寄存器，包含目标地址的基地址。
+
+imm：立即数，是一个12位有符号偏移量，用于计算最终的目标地址。
+1. 指令的执行过程
+计算目标地址：
+
+目标地址是通过将rs寄存器的值与imm立即数相加得到的。
+
+公式为：target_address = rs + imm。
+
+2. 保存返回地址：
+   
+返回地址是当前指令的下一条指令地址（PC + 4），这个地址会被保存到rd寄存器中。
+
+3. 跳转到目标地址：
+   
+程序计数器（PC）被更新为目标地址，从而实现跳转。
+#### 示例
+假设当前PC值为0x1000，rs寄存器的值为0x2000，imm为0x10，rd为x1。
+
+计算目标地址：
+target_address = rs + imm = 0x2000 + 0x10 = 0x2010。
+
+保存返回地址：
+返回地址是PC + 4 = 0x1000 + 4 = 0x1004，这个值会被保存到x1(ra)寄存器中。
+
+跳转到目标地址：
+PC被更新为0x2010，程序跳转到这个地址继续执行。
+
+
+jalr指令中的立即数imm允许在跳转时进行偏移，这提供了更多的灵活性。例如：
+
+函数返回：在函数返回时，通常不需要偏移，可以直接使用jalr x0, x1, 0，这等同于jr x1（跳转到x1寄存器中的地址，不保存返回地址）。
+
+间接跳转：在某些情况下，可能需要在基地址上加上一个偏移量来跳转到特定的地址。例如，跳转到一个数组中的某个元素对应的代码位置。
+
+
 ## 堆栈
 在函数调用前，需要存储旧的寄存器值，当从函数返回后要恢复这些值
 
@@ -185,6 +226,7 @@ RV32的程序（text segment）在低地址：0001_0000(hex)
 ```
 # 总结
 ## 算数、逻辑
+```
 add rd,rs1,rs2
 sub rd,rs1,rs2
 and rd,rs1,rs2
@@ -193,7 +235,9 @@ xor rd,rs1,rs2
 sll rd,rs1,rs2
 srl rd,rs1,rs2
 sra rd,rs1,rs2
+```
 ## 立即数
+```
 addi rd,rs1,imm
 subi rd,rs1,imm
 andi rd,rs1,imm
@@ -202,14 +246,17 @@ xori rd,rs1,imm
 slli rd,rs1,imm
 srli rd,rs1,imm
 srai rd,rs1,imm
-
+```
 ## load、store
+```
 lw  rd,rs1,imm
 lb  rd,rs1,imm
 lbu rd,rs1,imm
 sw  rd,rs1,imm
 sb  rd,rs1,imm
+```
 ## branching、jumps
+```
 beq rs1,rs2,Label
 bne rs1,rs2,Label
 bge rs1,rs2,Label
@@ -218,3 +265,4 @@ bgeu rs1,rs2,Label
 bltu rs1,rs2,Label
 jal rd,Lable
 jalr rd,rs,imm
+```
