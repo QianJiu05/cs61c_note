@@ -1,3 +1,4 @@
+# function call
 函数调用步骤
 1. 指定参数位置，让函数能够访问到
 2. 转移到函数
@@ -50,6 +51,13 @@ j: jal x0,Lable
 旧寄存器值存储在堆栈上，stack在内存中，需要一个reg指向它：sp（x2，stack pointer）
 
 堆栈从顶部向下增长
+|  | 地址 |
+|:------|-------|
+|frame | <-0xFFFFFFF0　|
+|frame |　|
+|frame |　|
+|frame |　|
+|frame | <-sp　|
 
 stack frame包含：
 1. 返回指令的地址
@@ -72,4 +80,141 @@ lw s0,0(sp) # 恢复s0原值
 lw s1,4(sp) # 恢复s1原值
 addi sp,sp,8 # 调整堆栈删除这两个变量的空间
 ```
- 
+ ### 嵌套调用和reg 协议
+ x1存返回地址，当main调用f1，f1调用f2，那么处理完f2后f1不知道回哪里了
+
+ caller：调用者；callee：被调用的函数
+
+ 当从callee返回时，需要知道哪些寄存器是可能改变的、哪些是不会变的
+
+ 把寄存器分为两类：保存的寄存器和易丢失（临时）寄存器
+
+ 1. 保存的寄存器，可以相信值未改变
+   
+    saved register（s0-s11），s0（fp），sp，gp，tp
+
+ 2. 不保存的寄存器
+    
+    参数寄存器，返回寄存器：a0-a7，ra
+
+    暂时寄存器：t0-t6
+
+不保存的寄存器需要进入堆栈才能保证其不丢失
+
+非x+序号的寄存器是ABI name，可以在汇编中调用（比如a0，ra，t0等等）
+
+## 内存分配
+C有两种存储类型：automatic 和 static
+
+自动变量是函数的本地变量，当函数退出就会被丢弃
+
+静态变量始终存在于程序的起始到结束
+
+用堆栈来保存不能存在寄存器的变量
+
+程序框架或激活记录：保存寄存器和局部变量的堆栈段
+
+```
+1.before call
+---
+| | <--sp
+| |
+| |
+---
+
+2.during call
+---------------------------------------------
+| saved return addr(if needed) 保存的返回地址  | 
+| saved argument regs(if any) 保存的参数寄存器 |
+| saved saved regs(if any) 保存的保存寄存器    |
+| local variables(if any) 本地变量            | <--sp
+---------------------------------------------
+
+3.after call
+---
+| | <--sp
+| |
+| |
+---
+```
+使用大块数据时，sp可能会很大
+### example sumSquare
+```
+int sumSquare(int x, int y){
+    return mult(x,x)+y;
+}
+a0存x，a1存y
+
+sumSquare:
+ #push
+    addi sp,sp,-8
+    sw ra,4(sp) # 把当前函数的返回地址存到内存中
+    sw a1,0(sp) # save y
+    mv a1,a0 # mult(x,x)
+    jal mult # call mult，jal自动把ra存成当前指令的下一条了（lw），执行完mult自动跳回来
+    lw a1,0(sp) # restore y
+    add a0,a0,a1 # mult()+y，a0存储的是mult调用的返回值
+    lw ra,4(sp) #get ret addr取回返回地址
+ #pop
+    addi sp,sp,8 #restore stack 删除栈
+    jr ra # 退出函数调用
+
+在本函数中 sumsquare：caller；mult：callee
+```
+### RV32约定（RV64、RV128有不同的内存布局）
+stack从高内存地址向下增长：BFFF_FFF0（hex）
+
+stack必须16字节对齐（之前的example没处理这个）
+
+RV32的程序（text segment）在低地址：0001_0000(hex)
+```
+---------------------
+|stack,goes down     |<---sp = BFFF_FFF0
+|                    |
+|                    |
+|                    |
+|dynamic data,goes up|
+---------------------
+|static data         |
+--------------------- <---1000 0000
+|text                |
+--------------------- <---pc = 0001 0000
+|reserved            |
+----------------------
+底部是系统调用内容，中断，IO等
+```
+# 总结
+## 算数、逻辑
+add rd,rs1,rs2
+sub rd,rs1,rs2
+and rd,rs1,rs2
+or  rd,rs1,rs2
+xor rd,rs1,rs2
+sll rd,rs1,rs2
+srl rd,rs1,rs2
+sra rd,rs1,rs2
+## 立即数
+addi rd,rs1,imm
+subi rd,rs1,imm
+andi rd,rs1,imm
+ori  rd,rs1,imm
+xori rd,rs1,imm
+slli rd,rs1,imm
+srli rd,rs1,imm
+srai rd,rs1,imm
+
+## load、store
+lw  rd,rs1,imm
+lb  rd,rs1,imm
+lbu rd,rs1,imm
+sw  rd,rs1,imm
+sb  rd,rs1,imm
+## branching、jumps
+beq rs1,rs2,Label
+bne rs1,rs2,Label
+bge rs1,rs2,Label
+blt rs1,rs2,Label
+bgeu rs1,rs2,Label
+bltu rs1,rs2,Label
+jal rd,Lable
+jalr rd,rs,imm
