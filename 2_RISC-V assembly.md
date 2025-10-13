@@ -187,3 +187,36 @@ Done:
 | << | sll | 左移，shift left logical |
 | >> | srl | 右移， shift right logical |
 
+### and
+`and x5,x6,x7`:`x5 = x6 & x7`
+
+`andi x5,x6,3`: `x5 = x6 & 3`
+
+与可用于mask bits： `& 0000 00FF`可以隔离最低一个byte并把其他位置置零；`& FF00 0000`隔离最高位byte
+
+---
+
+逻辑指令中没有`not`，可以用异或运算反转每一位
+
+### 移位
+`slli x11,x12,2`: x11 = x12 << 2,最右边补零
+
+右移指令`sra`,`srai`不能简单看作除以2的n次方（对，如果符号位是1，那么右移后的高位填充的是1。算术右移在符号位处理、精度损失、溢出和边界条件等方面与数学上的除法操作有显著差异。
+
+## a bit about machine program
+program counter存储下一条指令的字节地址，
+控制单元通过PC从内存中获取指令，
+执行完后更新PC（加四字节或分支）
+
+### regs
+a0-a7（x10-x17）是argument registers，用于函数调用
+
+x0 for 0
+
+### 伪指令
+```
+mv rd,rs ==> addi rd,rs,0
+li rd,13 ==> addi rd,x0,13
+nop      ==> addi x0,x0,0
+```
+伪指令让代码更具有可读性

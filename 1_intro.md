@@ -16,7 +16,7 @@ N bits 可以表示 2^N
 # C basics
 C编译器将C映射为机器语言（0和1）
 
-C将 .c文件编译成 .o文件，然后连接这些 .o文件成为可执行文件executables
+将 .c文件编译成 .o文件，然后连接这些 .o文件成为可执行文件executables
 
 .o就是机器码
 
@@ -32,7 +32,7 @@ foo.c->[CPP]->foo.i->[Compiler]
 
 通过int main(int argc, char *argv[])来接收参数
 
-malloc作用与heap，但是对malloc的调用需要增长stack
+malloc作用于heap，但是对malloc的调用需要增长stack
 # float
 只要发送有效位和所处位置就可以表示float
 
